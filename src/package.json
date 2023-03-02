@@ -1,0 +1,8 @@
+{
+  "dependencies": {
+    "@octokit/core": "^4.2.0",
+    "@octokit/rest": "^19.0.7",
+    "csv-writer": "^1.6.0",
+    "dotenv": "^16.0.3"
+  }
+}
