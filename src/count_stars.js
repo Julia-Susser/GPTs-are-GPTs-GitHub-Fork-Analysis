@@ -2,10 +2,12 @@ const { Octokit } = require('@octokit/rest');
 const createCsvWriter = require('csv-writer').createObjectCsvWriter;
 const createCsvStringifier = require('csv-writer').createObjectCsvStringifier;
 const fs = require('fs');
+const { MaxPages } = require('./max-pages');
 require("dotenv").config();
 
-class GithubStarsOverTime {
+class GithubStarsOverTime extends MaxPages{
   constructor(repoName) {
+    super()
     this.repoName = "huggingface/transformers";
     this.octokit = new Octokit({ auth: process.env.GITHUB_TOKEN }); // Replace YOUR-TOKEN with your GitHub personal access token
     [this.owner, this.repo] = this.repoName.split('/');
@@ -22,8 +24,7 @@ class GithubStarsOverTime {
     this.getStarsOverTime()
 }
 
-  async getStarsOverTime(sinceDate, untilDate) {
-    this.performRequest()
+  async getStarsOverTime() {
     this.csvWriter = await this.makeCSVWriter()
     this.maxPages = await this.getMaxPages()
     await this.performQueries()
@@ -42,51 +43,6 @@ class GithubStarsOverTime {
         
     }
   }
-
-  async getMaxPages(){
-    const res = await this.performRequest()
-    return this.findMaxPages(res)
-}
-  async findMaxPages(res) {
-    const linkHeader = res.headers.link;
-    const lastPageLink = linkHeader ? linkHeader.match(/<([^>]*)>; rel="last"/) : null;
-  
-    if (lastPageLink) {
-      const lastPageUrl = new URL(lastPageLink[1]);
-      const lastPageParams = Object.fromEntries(lastPageUrl.searchParams.entries());
-      const lastPage = parseInt(lastPageParams.page);
-  
-      return lastPage;
-    } else {
-      return 1;
-    }
-}
-    async makeCSVWriter(){
-        const res = await this.performRequest()
-        const data = await res.data;
-        var keys = Object.keys(data[0].user)
-        keys.push("starred_at")
-        var header = keys.map(key => {return {id:key, title:key}} )
-        var headerrow = Object.values(keys.reduce((result, key, index) => {
-            result[key] = keys[index];
-            return result;
-        }, []));
-        
-        return this.getCSVWriter(header,headerrow)
-    }
-    async getCSVWriter(header, headerrow, append=false){
-        const fileExists = await fs.existsSync(this.csvFilePath);
-        if (!append | !fileExists){
-          await fs.writeFileSync(this.csvFilePath, headerrow.join(",")+"\n")
-        }
-        var params = {
-          path: this.csvFilePath,
-          header: header,
-          append: true,
-        }
-        var csvWriter = createCsvWriter(params);
-        return csvWriter
-    }
 
     async parseResponse(){
         this.resArray.map(res => this.write(res))

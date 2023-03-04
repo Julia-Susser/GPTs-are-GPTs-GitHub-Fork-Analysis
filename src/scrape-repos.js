@@ -2,13 +2,15 @@ const { Octokit } = require("@octokit/core");
 const createCsvWriter = require('csv-writer').createObjectCsvWriter;
 const createCsvStringifier = require('csv-writer').createObjectCsvStringifier;
 const fs = require('fs');
+const { MaxPages } = require("./max-pages");
 require("dotenv").config();
 
 
 
 
-class GitHubScraper {
+class GitHubScraper extends MaxPages{
     constructor() {
+      super()
       this.octokit = new Octokit({ auth: process.env.GITHUB_TOKEN }); // Replace YOUR-TOKEN with your GitHub personal access token
       this.searchQuery = "ai"; // Replace with your search query
       this.csvFilePath = "../inputs/repos.csv"
@@ -22,42 +24,13 @@ class GitHubScraper {
 
     }
     async runScraper(){
-        this.csvWriter = await this.createCSVWriter()
+        this.csvWriter = await this.makeCSVWriter()
         this.maxPages = await this.getMaxPages()
         this.resArray = await this.fetchQuery()
         this.parseResponse()
      
     }
   
-    async createCSVWriter(){
-        const res = await this.performRequest()
-        const data = await res.data;
-        var keys = Object.keys(data.items[0])
-        keys.push("finished")
-        var header = keys.map(key => {return {id:key, title:key}} )
-        var headerrow = keys.reduce((result, key, index) => {
-            result[key] = keys[index];
-            return result;
-        }, {});
-        return this.getCSVWriter(header,headerrow)
-    }
-    async getCSVWriter(header, headerrow, append=true){
-        const fileExists = await fs.existsSync(this.csvFilePath);
-        var params = {
-            path: this.csvFilePath,
-            header: header,
-            append: true
-          }
-        params.append = true
-        const csvWriter = createCsvWriter(params);
-        if (!fileExists) {
-            csvWriter.writeRecords([headerrow])
-        }
-        return csvWriter
-    }
-
-    
-
     async parseResponse(){
         this.resArray.map(res => this.write(res))
     }
@@ -70,25 +43,7 @@ class GitHubScraper {
         });
         await this.csvWriter.writeRecords(records);
     }
-    async getMaxPages(){
-        const res = await this.performRequest()
-        return this.findMaxPages(res)
-    }
-    async findMaxPages(res) {
-        const linkHeader = res.headers.link;
-        const lastPageLink = linkHeader ? linkHeader.match(/<([^>]*)>; rel="last"/) : null;
-      
-        if (lastPageLink) {
-          const lastPageUrl = new URL(lastPageLink[1]);
-          const lastPageParams = Object.fromEntries(lastPageUrl.searchParams.entries());
-          const lastPage = parseInt(lastPageParams.page);
-      
-          return lastPage;
-        } else {
-          return 1;
-        }
-    }
-
+    
     async fetchQuery(){
         const requestPages = Array.from({length: this.maxPages}, (_, i) => i + 1)
         const resArray = await Promise.all(
