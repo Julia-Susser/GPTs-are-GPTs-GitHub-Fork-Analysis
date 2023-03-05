@@ -3,14 +3,14 @@ const createCsvStringifier = require('csv-writer').createObjectCsvStringifier;
 const fs = require('fs');
 
 class CSVHelper {
-    async makeCSVWriter(keys){
+    async makeCSVWriter(keys, append=false){
         var header = keys.map(key => {return {id:key, title:key}} )
         var headerrow = Object.values(keys.reduce((result, key, index) => {
             result[key] = keys[index];
             return result;
         }, []));
         
-        return this.getCSVWriter(header,headerrow)
+        return this.getCSVWriter(header,headerrow, append)
     }
     async getCSVWriter(header, headerrow, append=false){
         const fileExists = await fs.existsSync(this.csvFilePath);

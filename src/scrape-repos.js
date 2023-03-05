@@ -32,7 +32,7 @@ class GitHubScraper extends MaxPages{
     }
     async runScraper(){
         this.header = await this.getHeader()
-        this.csvWriter = await this.makeCSVWriter(this.header)
+        this.csvWriter = await this.makeCSVWriter(keys=this.header,append=true)
         this.maxPages = await this.getMaxPages()
         this.resArray = await this.fetchQuery()
         this.parseResponse()
