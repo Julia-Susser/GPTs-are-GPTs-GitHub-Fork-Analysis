@@ -23,8 +23,16 @@ class GitHubScraper extends MaxPages{
      this.runScraper()
 
     }
+    async getHeader(){
+      const res = await this.performRequest()
+      const data = await res.data;
+      var keys = Object.keys(data.items[0])
+      keys.push("finished")
+      return keys
+    }
     async runScraper(){
-        this.csvWriter = await this.makeCSVWriter()
+        this.header = await this.getHeader()
+        this.csvWriter = await this.makeCSVWriter(this.header)
         this.maxPages = await this.getMaxPages()
         this.resArray = await this.fetchQuery()
         this.parseResponse()

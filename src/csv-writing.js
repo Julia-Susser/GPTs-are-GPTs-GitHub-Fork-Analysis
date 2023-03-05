@@ -3,11 +3,7 @@ const createCsvStringifier = require('csv-writer').createObjectCsvStringifier;
 const fs = require('fs');
 
 class CSVHelper {
-    async makeCSVWriter(){
-        const res = await this.performRequest()
-        const data = await res.data;
-        var keys = Object.keys(data[0].user)
-        keys.push("starred_at")
+    async makeCSVWriter(keys){
         var header = keys.map(key => {return {id:key, title:key}} )
         var headerrow = Object.values(keys.reduce((result, key, index) => {
             result[key] = keys[index];

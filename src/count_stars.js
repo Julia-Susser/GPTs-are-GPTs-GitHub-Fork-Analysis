@@ -23,17 +23,23 @@ class GithubStarsOverTime extends MaxPages{
       }
     this.getStarsOverTime()
 }
-
+  async getHeader(){
+    const res = await this.performRequest()
+    const data = await res.data;
+    var keys = Object.keys(data[0].user)
+    keys.push("starred_at")
+    return keys
+  }
   async getStarsOverTime() {
-    this.csvWriter = await this.makeCSVWriter()
+    this.header = await this.getHeader()
+    this.csvWriter = await this.makeCSVWriter(this.header)
     this.maxPages = await this.getMaxPages()
     await this.performQueries()
-}
+  }
 
   async performQueries() {
-    var start = 400
+    var start = 1
     var length = 10
-    this.maxPages = 500
     while (start < this.maxPages){
         var length = Math.min(this.maxPages-start+1,length)
         await new Promise(resolve => setTimeout(resolve, 100));
