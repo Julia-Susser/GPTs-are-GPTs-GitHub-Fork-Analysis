@@ -2,11 +2,12 @@ const { Octokit } = require('@octokit/rest');
 const createCsvWriter = require('csv-writer').createObjectCsvWriter;
 const createCsvStringifier = require('csv-writer').createObjectCsvStringifier;
 const fs = require('fs');
+const csv = require('csv-parser');
 const { MaxPages } = require('./max-pages');
 require("dotenv").config();
 
 
-class GithubForksOverTime extends MaxPages{
+class GithubForksUpdate extends MaxPages{
   constructor(repoName) {
     super()
     this.repoName = repoName;
@@ -24,42 +25,9 @@ class GithubForksOverTime extends MaxPages{
             'X-GitHub-Api-Version': '2022-11-28'
           }
       }
+    // this.runScraper()
   }
 
-  async writeInfo(){
-    var data = await this.octokit.request('GET /repos/{owner}/{repo}', {
-      owner: this.owner,
-      repo: this.repo,
-      headers: {
-        'X-GitHub-Api-Version': '2022-11-28'
-      }
-    })    
-    fs.writeFileSync(this.folder+"/info.json", JSON.stringify(data))
-    var data = await this.octokit.request('GET /repos/{owner}/{repo}/contents/{path}', {
-      owner: this.owner,
-      repo: this.repo,
-      path: 'README.md',
-      headers: {
-        'X-GitHub-Api-Version': '2022-11-28'
-      }
-    })
-    data = data.data.content
-    const decodedBuffer = Buffer.from(data, 'base64');
-    data = decodedBuffer.toString();
-    fs.writeFileSync(this.folder+"/README.md", data)
-    console.log("here")
-    await new Promise(resolve => setTimeout(resolve, 10000));
-  }
-
-  exists(){
-    return fs.existsSync(this.folder)
-  }
-  async createFolder(){
-    if (!fs.existsSync(this.folder)) {
-      fs.mkdirSync(this.folder);
-    } 
-  }
-  
   async getHeader(){
     const res = await this.performRequest()
     const data = await res.data[0];
@@ -67,12 +35,23 @@ class GithubForksOverTime extends MaxPages{
     return keys
   }
   async runScraper() {
-    this.createFolder()
     this.header = await this.getHeader()
-    this.csvWriter = await this.makeCSVWriter(this.header)
+    this.csvWriter = await this.makeCSVWriter(this.header, true)
+    this.since = await this.getLatestFork()
+    console.log(this.since)
+    this.searchParams["since"]=this.since
     this.maxPages = await this.getMaxPages()
-    await this.writeInfo()
     await this.performQueries()
+  }
+
+  async getLatestFork(){
+    var lines = await this.readCSVFile(this.csvFilePath)
+    var dates = lines.map(line => line.created_at)
+    dates = dates.map(dateStr => new Date(dateStr).getTime());
+    dates = dates.filter(timestamp => typeof timestamp == 'number' && !isNaN(timestamp));
+    var date = Math.max.apply(null,dates)
+    date = new Date(date).toISOString();
+    return date
   }
 
   async performQueries() {
@@ -83,7 +62,8 @@ class GithubForksOverTime extends MaxPages{
     while (start <= this.maxPages){
         var length = Math.min(this.maxPages-start+1,length)
         this.resArray = await this.fetchQuery(start, length)
-        this.parseResponse()
+        var finished = this.parseResponse()
+        if (finished){ break; }
         var start = start+length
         if (count % 3==0){
           console.log("waiting")
@@ -96,11 +76,19 @@ class GithubForksOverTime extends MaxPages{
 
     async parseResponse(){
         this.resArray.map(res => this.write(res))
+        var stop = this.resArray[this.resArray.length-1].data[0].created_at
+        stop = stop < this.since
+        return stop
     }
 
     async write(res) {
-        const records = await res.data;
-        await this.csvWriter.writeRecords(records);
+        var data = await res.data;
+        var records = data.filter(item => {
+            return item.created_at > this.since
+        });
+        if (records.length>0){
+            await this.csvWriter.writeRecords(records);
+        }
     }
 
 
@@ -122,7 +110,22 @@ class GithubForksOverTime extends MaxPages{
         return res
     }
 
+    async readCSVFile(filename) {
+        return new Promise((resolve, reject) => {
+          const lines = [];
+      
+          fs.createReadStream(filename)
+            .pipe(csv())
+            .on('data', (row) => {
+              lines.push(row);
+            })
+            .on('end', () => {
+              resolve(lines);
+            })
+        });
+    }
+
 }
 
-//new GithubForksOverTime("huggingface/transformers")
-module.exports = { GithubForksOverTime } ;
+//new GithubForksUpdate("huggingface/transformers")
+module.exports = { GithubForksUpdate } ;
