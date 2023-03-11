@@ -5,13 +5,17 @@ const fs = require('fs');
 const { MaxPages } = require('./max-pages');
 require("dotenv").config();
 
+
 class GithubForksOverTime extends MaxPages{
   constructor(repoName) {
     super()
     this.repoName = "huggingface/transformers";
-    this.octokit = new Octokit({ auth: process.env.GITHUB_TOKEN }); // Replace YOUR-TOKEN with your GitHub personal access token
     [this.owner, this.repo] = this.repoName.split('/');
-    this.csvFilePath = "../inputs/"+this.owner+"-"+this.repo+"-forks.csv"
+    this.repoName = this.owner+"-"+this.repo
+    this.octokit = new Octokit({ auth: process.env.GITHUB_TOKEN }); // Replace YOUR-TOKEN with your GitHub personal access token
+    this.folder = "../inputs/"+this.repoName
+    this.csvFilePath = this.folder+"forks.csv"
+    this.createFolder()
     this.searchParams = {
         owner: this.owner,
         repo: this.repo,
@@ -21,8 +25,41 @@ class GithubForksOverTime extends MaxPages{
             'X-GitHub-Api-Version': '2022-11-28'
           }
       }
-    this.getForksOverTime()
-}
+    this.writeInfo()
+    //this.getForksOverTime()
+  }
+  async writeInfo(){
+    var data = await this.octokit.request('GET /repos/{owner}/{repo}', {
+      owner: this.owner,
+      repo: this.repo,
+      headers: {
+        'X-GitHub-Api-Version': '2022-11-28'
+      }
+    })    
+    console.log(data)
+    fs.writeFileSync(this.folder+"/info.txt", JSON.stringify(data))
+    var data = await this.octokit.request('GET /repos/{owner}/{repo}/contents/{path}', {
+      owner: this.owner,
+      repo: this.repo,
+      path: 'README.md',
+      headers: {
+        'X-GitHub-Api-Version': '2022-11-28'
+      }
+    })
+    data = data.data.content
+    const decodedBuffer = Buffer.from(data, 'base64');
+    data = decodedBuffer.toString();
+    fs.writeFileSync(this.folder+"/README.md", data)
+  }
+  exists(){
+    return fs.existsSync(this.folder)
+  }
+  async createFolder(){
+    if (!fs.existsSync(this.folder)) {
+      fs.mkdirSync(this.folder);
+    } 
+  }
+  
   async getHeader(){
     const res = await this.performRequest()
     const data = await res.data[0];

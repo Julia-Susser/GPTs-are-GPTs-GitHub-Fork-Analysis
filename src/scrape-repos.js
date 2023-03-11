@@ -20,8 +20,6 @@ class GitHubScraper extends MaxPages{
         "order":"desc",
         "per_page":100    
      };
-     this.runScraper()
-
     }
     async getHeader(){
       const res = await this.performRequest()
@@ -32,10 +30,11 @@ class GitHubScraper extends MaxPages{
     }
     async runScraper(){
         this.header = await this.getHeader()
-        this.csvWriter = await this.makeCSVWriter(keys=this.header,append=true)
+        this.csvWriter = await this.makeCSVWriter(this.header,true)
         this.maxPages = await this.getMaxPages()
         this.resArray = await this.fetchQuery()
         this.parseResponse()
+        console.log("finished")
      
     }
   
@@ -77,5 +76,5 @@ class GitHubScraper extends MaxPages{
 
 
 
-new GitHubScraper()
 
+module.exports = { GitHubScraper };
