@@ -50,7 +50,7 @@ class GithubForksUpdate extends MaxPages{
     dates = dates.map(dateStr => new Date(dateStr).getTime());
     dates = dates.filter(timestamp => typeof timestamp == 'number' && !isNaN(timestamp));
     var date = Math.max.apply(null,dates)
-    date = new Date(date).toISOString();
+    date = new Date(date).toISOString().substring(0, 19) + 'Z';
     return date
   }
 
@@ -77,7 +77,7 @@ class GithubForksUpdate extends MaxPages{
     async parseResponse(){
         this.resArray.map(res => this.write(res))
         var stop = this.resArray[this.resArray.length-1].data[0].created_at
-        stop = stop < this.since
+        stop = stop <= this.since
         return stop
     }
 

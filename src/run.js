@@ -9,8 +9,8 @@ class Run{
         this.queriesFilename = "../inputs/queries.csv";
         this.reposFilename = "../inputs/repos.csv";
         //this.readQueries()
-        //this.readForks()
-        this.updateForks()
+        this.readForks()
+        //this.updateForks()
     }
     async readCSVFile(filename) {
         return new Promise((resolve, reject) => {
@@ -50,17 +50,25 @@ class Run{
             }
         }
     }
+    exists(repo){
+        return fs.existsSync("../inputs/"+repo.split("/").join("-"))
+    }
 
     async readForks(){
         var lines = await this.readCSVFile(this.reposFilename)
         var count = 0
         while (count < lines.length){
             var repo = lines[count]["full_name"]
+            count += 1
             console.log(repo)
+            // if (this.exists(repo)){ 
+            //     console.log("already scraped")
+            //     this.deleteFirstLine(this.reposFilename)
+            //     continue;
+            // }
             var repoScrape = new GithubForksOverTime(repo)
             await repoScrape.runScraper()
             this.deleteFirstLine(this.reposFilename)
-            count += 1
             if (count % 3==0){
                 await new Promise(resolve => setTimeout(resolve, 10000));
             }
@@ -78,8 +86,9 @@ class Run{
             var repoScrape = new GithubForksUpdate(repo)
             await repoScrape.runScraper()
             count += 1
-            if (count % 3==0){
-                await new Promise(resolve => setTimeout(resolve, 10000));
+            if (count % 1==0){
+                console.log("waiting")
+                await new Promise(resolve => setTimeout(resolve, 25000));
             }
         }
     }
