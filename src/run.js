@@ -51,7 +51,7 @@ class Run{
         }
     }
     exists(repo){
-        return fs.existsSync("../inputs/"+repo.split("/").join("-"))
+        return fs.existsSync("../outputs/"+repo.split("/").join("-"))
     }
 
     async readForks(){
@@ -70,6 +70,7 @@ class Run{
             await repoScrape.runScraper()
             this.deleteFirstLine(this.reposFilename)
             if (count % 3==0){
+                console.log("waiting")
                 await new Promise(resolve => setTimeout(resolve, 10000));
             }
         }

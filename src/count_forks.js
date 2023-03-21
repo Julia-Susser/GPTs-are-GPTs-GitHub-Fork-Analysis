@@ -13,7 +13,7 @@ class GithubForksOverTime extends MaxPages{
     [this.owner, this.repo] = this.repoName.split('/');
     this.repoName = this.owner+"-"+this.repo
     this.octokit = new Octokit({ auth: process.env.GITHUB_TOKEN }); // Replace YOUR-TOKEN with your GitHub personal access token
-    this.folder = "../inputs/"+this.repoName
+    this.folder = "../outputs/"+this.repoName
     this.csvFilePath = this.folder+"/forks.csv"
     this.searchParams = {
         owner: this.owner,
@@ -47,6 +47,8 @@ class GithubForksOverTime extends MaxPages{
       })    
       fs.writeFileSync(this.folder+"/info.json", JSON.stringify(data))
     }catch (error){
+      console.log(error)
+      //github api max request limit, so set waiting buffer and restart
       console.log(error.name)
       await new Promise(resolve => setTimeout(resolve, 50000));
       this.writeInfo()
@@ -66,6 +68,7 @@ class GithubForksOverTime extends MaxPages{
       data = decodedBuffer.toString();
       fs.writeFileSync(this.folder+"/README.md", data);
     } catch (error) {
+      //readme file not found, so write error and continue
       console.log("README ERROR")
       fs.writeFileSync(this.folder+"/README.md", "ERROR");
     }
