@@ -2,7 +2,7 @@ const fs = require('fs');
 const csv = require('csv-parser');
 const { GitHubScraper } = require("./scrape-repos");
 const { GithubForksOverTime } = require('./count_forks');
-const { GithubForksUpdate } = require('./update.js');
+const { GithubForksUpdate } = require('./update-forks.js');
 
 class Run{
     constructor() {

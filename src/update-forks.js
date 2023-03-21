@@ -28,22 +28,17 @@ class GithubForksUpdate extends MaxPages{
     // this.runScraper()
   }
 
-  async getHeader(){
-    const res = await this.performRequest()
-    const data = await res.data[0];
-    var keys = Object.keys(data)
-    return keys
-  }
   async runScraper() {
-    this.header = await this.getHeader()
-    this.csvWriter = await this.makeCSVWriter(this.header, true)
-    this.since = await this.getLatestFork()
+    this.header = await this.getHeader() //get header values for csv file
+    this.csvWriter = await this.makeCSVWriter(this.header, true) //use header values to create CSV writer but don't overwrite current repos file
+    this.since = await this.getLatestFork() //get the latest fork queried because only need to add forks past this date
     console.log(this.since)
-    this.searchParams["since"]=this.since
-    this.maxPages = await this.getMaxPages()
-    await this.performQueries()
+    this.searchParams["since"]=this.since //add this date to search params so only queries forks past data
+    this.maxPages = await this.getMaxPages() //get maxPages of forks (only forks past date)
+    await this.performQueries() //get queries and write to csv (bottom of csv file so dates get mixed up)
   }
-
+  
+  //getLatestFork returns the date of the newest fork in the csv file
   async getLatestFork(){
     var lines = await this.readCSVFile(this.csvFilePath)
     var dates = lines.map(line => line.created_at)

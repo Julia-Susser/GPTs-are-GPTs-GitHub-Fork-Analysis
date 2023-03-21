@@ -27,8 +27,8 @@ class GithubForksOverTime extends MaxPages{
   }
 
   async runScraper() {
-    this.createFolder() //create folder for repo data
     this.header = await this.getHeader() //get header values for csv file
+    this.createFolder() //create folder for repo data
     this.csvWriter = await this.makeCSVWriter(this.header) //use header values to create CSV writer for forks
     this.maxPages = await this.getMaxPages() //get max pages of forks to scrape
     await this.writeInfo() //write general info about repo being scraper into folder (info and readme.md)
@@ -85,14 +85,6 @@ class GithubForksOverTime extends MaxPages{
     } 
   }
 
-  //getHeader returns the header values for the csv file that counts forks
-  //to get values the function uses a dummy request to the api to see what data the api returns when retrieving forks over time
-  async getHeader(){
-    const res = await this.performRequest()
-    const data = await res.data[0];
-    var keys = Object.keys(data)
-    return keys
-  }
   //performQueries scrapes data about forks over time of a given repository
   //the github api works by allowing you to get a page of data on forks (a page can have up to 100 items)
   //in order to slow down the queries, the function segments page queries into lengths of 10 and then adds a time buffer in between batches
@@ -148,8 +140,10 @@ class GithubForksOverTime extends MaxPages{
       return res
     }catch(error){
       console.log(error.name)
+      console.log("waiting")
       await new Promise(resolve => setTimeout(resolve, 50000));
-      return this.performRequest(page)
+      const res = this.performRequest(page)
+      return res;
     }
   }
 
