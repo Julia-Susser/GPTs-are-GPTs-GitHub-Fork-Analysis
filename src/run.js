@@ -8,6 +8,7 @@ class Run{
     constructor() {
         this.queriesFilename = "../inputs/queries.csv";
         this.reposFilename = "../inputs/repos.csv";
+        this.forkDataFolder = "../outputs"
         //this.readQueries()
         this.readForks()
         //this.updateForks()
@@ -34,7 +35,8 @@ class Run{
         const modifiedCsv = lines.join('\n');
         fs.writeFileSync(filename, modifiedCsv, 'utf-8');
     }
-
+    //readQueries uses a list of queries in queries.csv and uses github api to scrape for query
+    //each query has a maximum of 1000 repositories that are returned per query
     async readQueries(){
         var lines = await this.readCSVFile(this.queriesFilename)
         var count = 0
@@ -51,9 +53,11 @@ class Run{
         }
     }
     exists(repo){
-        return fs.existsSync("../outputs/"+repo.split("/").join("-"))
+        return fs.existsSync(this.forkDataFolder+repo.split("/").join("-"))
     }
 
+    //readForks reads files of possible repos and then scrapes each individual repo for forks
+    //once finished, it deletes the repo from the top of the file
     async readForks(){
         var lines = await this.readCSVFile(this.reposFilename)
         var count = 0
@@ -61,11 +65,11 @@ class Run{
             var repo = lines[count]["full_name"]
             count += 1
             console.log(repo)
-            // if (this.exists(repo)){ 
-            //     console.log("already scraped")
-            //     this.deleteFirstLine(this.reposFilename)
-            //     continue;
-            // }
+            if (this.exists(repo)){ 
+                console.log("already scraped")
+                this.deleteFirstLine(this.reposFilename)
+                continue;
+            }
             var repoScrape = new GithubForksOverTime(repo)
             await repoScrape.runScraper()
             this.deleteFirstLine(this.reposFilename)
@@ -76,13 +80,14 @@ class Run{
         }
     }
 
+    //reads all directors and then updates the forks in the directory
     async updateForks(){
-        var repos = fs.readdirSync("../inputs", { withFileTypes: true });
+        var repos = fs.readdirSync(this.forkDataFolder, { withFileTypes: true });
         repos = repos.filter((file) => file.isDirectory()).map((file) => file.name);
         var count = 0
         while (count < repos.length){
             var repo = repos[count]
-            repo = repo.split("-").join("/")
+            repo = repo.split("*").join("/")
             console.log(repo)
             var repoScrape = new GithubForksUpdate(repo)
             await repoScrape.runScraper()

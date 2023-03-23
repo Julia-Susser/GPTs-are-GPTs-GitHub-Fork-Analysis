@@ -11,7 +11,7 @@ class GithubForksOverTime extends MaxPages{
     super()
     this.repoName = repoName;
     [this.owner, this.repo] = this.repoName.split('/');
-    this.repoName = this.owner+"-"+this.repo
+    this.repoName = this.owner+"*"+this.repo
     this.octokit = new Octokit({ auth: process.env.GITHUB_TOKEN }); // Replace YOUR-TOKEN with your GitHub personal access token
     this.folder = "../outputs/"+this.repoName
     this.csvFilePath = this.folder+"/forks.csv"
@@ -27,6 +27,11 @@ class GithubForksOverTime extends MaxPages{
   }
 
   async runScraper() {
+    var success = await this.performRequest() //submit dummy request to check if repo is found
+    if (!success){
+      console.log("FAILED")
+      return false;
+    }
     this.header = await this.getHeader() //get header values for csv file
     this.createFolder() //create folder for repo data
     this.csvWriter = await this.makeCSVWriter(this.header) //use header values to create CSV writer for forks
@@ -47,7 +52,8 @@ class GithubForksOverTime extends MaxPages{
       })    
       fs.writeFileSync(this.folder+"/info.json", JSON.stringify(data))
     }catch (error){
-      console.log(error)
+      if (error.message == "NOT FOUND"){ return false; }
+      console.log(error.message)
       //github api max request limit, so set waiting buffer and restart
       console.log(error.name)
       await new Promise(resolve => setTimeout(resolve, 50000));
@@ -139,7 +145,8 @@ class GithubForksOverTime extends MaxPages{
       const res = await this.octokit.request('GET /repos/{owner}/{repo}/forks', params)
       return res
     }catch(error){
-      console.log(error.name)
+      if (error.message == "Not Found"){ return false; }
+      console.log(error.message)
       console.log("waiting")
       await new Promise(resolve => setTimeout(resolve, 50000));
       const res = this.performRequest(page)

@@ -1,5 +1,6 @@
 const createCsvWriter = require('csv-writer').createObjectCsvWriter;
 const createCsvStringifier = require('csv-writer').createObjectCsvStringifier;
+const csv = require('csv-parser');
 const fs = require('fs');
 
 class CSVHelper {
@@ -14,7 +15,7 @@ class CSVHelper {
         
         return this.getCSVWriter(header,headerrow, append)
     }
-    
+
     //getHeader returns the header values for the csv file that counts forks
     //to get values the function uses a dummy request to the api to see what data the api returns when retrieving forks over time
     async getHeader(){
@@ -40,6 +41,20 @@ class CSVHelper {
         var csvWriter = createCsvWriter(params);
         return csvWriter
     }
+    //readCSVFiles returns data from csv in array of dictionaries
+    async readCSVFile(filename) {
+      return new Promise((resolve, reject) => {
+        const lines = [];
+        fs.createReadStream(filename)
+          .pipe(csv())
+          .on('data', (row) => {
+            lines.push(row);
+          })
+          .on('end', () => {
+            resolve(lines);
+          })
+      });
+  }
 }
 
 module.exports = { CSVHelper };

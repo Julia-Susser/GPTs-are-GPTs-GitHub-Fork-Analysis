@@ -12,9 +12,9 @@ class GithubForksUpdate extends MaxPages{
     super()
     this.repoName = repoName;
     [this.owner, this.repo] = this.repoName.split('/');
-    this.repoName = this.owner+"-"+this.repo
+    this.repoName = this.owner+"*"+this.repo
     this.octokit = new Octokit({ auth: process.env.GITHUB_TOKEN }); // Replace YOUR-TOKEN with your GitHub personal access token
-    this.folder = "../inputs/"+this.repoName
+    this.folder = "../outputs/"+this.repoName
     this.csvFilePath = this.folder+"/forks.csv"
     this.searchParams = {
         owner: this.owner,
@@ -32,13 +32,15 @@ class GithubForksUpdate extends MaxPages{
     this.header = await this.getHeader() //get header values for csv file
     this.csvWriter = await this.makeCSVWriter(this.header, true) //use header values to create CSV writer but don't overwrite current repos file
     this.since = await this.getLatestFork() //get the latest fork queried because only need to add forks past this date
-    console.log(this.since)
-    this.searchParams["since"]=this.since //add this date to search params so only queries forks past data
     this.maxPages = await this.getMaxPages() //get maxPages of forks (only forks past date)
+    console.log(this.maxPages)
     await this.performQueries() //get queries and write to csv (bottom of csv file so dates get mixed up)
+    console.log("finished")
   }
-  
+
   //getLatestFork returns the date of the newest fork in the csv file
+  //since new forks from update write the end of file but original file also writes from newest to oldest the order gets messed up
+  //therefore rather than focusing on keeping order correct by erasing file and rewriting, I grab all dates and sort for newest
   async getLatestFork(){
     var lines = await this.readCSVFile(this.csvFilePath)
     var dates = lines.map(line => line.created_at)
@@ -49,17 +51,22 @@ class GithubForksUpdate extends MaxPages{
     return date
   }
 
+  //performQueries scrapes data about forks of repo since specified date
+  //when parsing repsonse from github, the code checks if there are forks past given date
+  //since the forks go from newest to oldest, the code spots querying forks when it reaches a fork past latest date
+  //also, the github api works by allowing you to get a page of data on forks (a page can have up to 100 items)
+  //in order to slow down the queries, the function segments page queries into lengths of 10 and then adds a time buffer in between batches
+  //indeed, the scraping of pages 1-10, 11-20... are asynchronous and in between, there is a timeout to prevent hitting max request rate
   async performQueries() {
-    var start = 1
-    var length = 10
+    var page_start = 1 //where to start batch of page requests
+    var page_end = 10 
     var count = 1
-    console.log(this.maxPages)
-    while (start <= this.maxPages){
-        var length = Math.min(this.maxPages-start+1,length)
-        this.resArray = await this.fetchQuery(start, length)
-        var finished = this.parseResponse()
-        if (finished){ break; }
-        var start = start+length
+    while (page_start <= this.maxPages){
+        var page_end = Math.min(this.maxPages-page_start+1,page_end)
+        this.resArray = await this.fetchQuery(page_start, page_end)
+        var finished = this.parseResponse() //writes forks before latest date to csv and checks whether fork queried is older than latest date to determine whether to keep querying
+        if (finished){ break; } //if fork is older than latest date, then stop
+        var page_start = page_start+page_end //find new page start
         if (count % 3==0){
           console.log("waiting")
           await new Promise(resolve => setTimeout(resolve, 50000));
@@ -87,8 +94,8 @@ class GithubForksUpdate extends MaxPages{
     }
 
 
-    async fetchQuery(start, length){
-        const requestPages = Array.from({length: length}, (_, i) => i + start)
+    async fetchQuery(page_start, page_end){
+      const requestPages = Array.from({length: page_end}, (_, i) => i + page_start)
         console.log(requestPages)
         const resArray = await Promise.all(
             requestPages.map((page) => {
@@ -103,21 +110,6 @@ class GithubForksUpdate extends MaxPages{
         params.page = page
         const res = await this.octokit.request('GET /repos/{owner}/{repo}/forks', params)
         return res
-    }
-
-    async readCSVFile(filename) {
-        return new Promise((resolve, reject) => {
-          const lines = [];
-      
-          fs.createReadStream(filename)
-            .pipe(csv())
-            .on('data', (row) => {
-              lines.push(row);
-            })
-            .on('end', () => {
-              resolve(lines);
-            })
-        });
     }
 
 }
