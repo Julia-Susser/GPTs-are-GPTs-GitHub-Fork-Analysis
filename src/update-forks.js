@@ -106,10 +106,19 @@ class GithubForksUpdate extends MaxPages{
     }
 
     async performRequest(page=1){
+      try{
         const params = this.searchParams
         params.page = page
         const res = await this.octokit.request('GET /repos/{owner}/{repo}/forks', params)
         return res
+      }catch(error){
+        if (error.message == "Not Found"){ return false; }
+        console.log(error.message)
+        console.log("waiting")
+        await new Promise(resolve => setTimeout(resolve, 50000));
+        const res = this.performRequest(page)
+        return res;
+      }
     }
 
 }
