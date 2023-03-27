@@ -1,6 +1,15 @@
 
+# Ignore the .env file in the src directory
 src/.env
-!inputs/queries.csv
-inputs
+
+# Ignore all CSV files in the root directory
 *.csv
-outputs
+
+# Ignore the outputs directory
+outputs/
+
+# Include the inputs directory
+inputs/
+
+# Include the possible-queries.csv file in the inputs directory
+!inputs/possible-queries.csv
