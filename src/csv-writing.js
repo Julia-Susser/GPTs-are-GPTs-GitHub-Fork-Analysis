@@ -16,15 +16,7 @@ class CSVHelper {
         return this.getCSVWriter(header,headerrow, append)
     }
 
-    //getHeader returns the header values for the csv file that counts forks
-    //to get values the function uses a dummy request to the api to see what data the api returns when retrieving forks over time
-    async getHeader(){
-      const res = await this.performRequest()
-      if (res.data.length==0){return []}
-      const data = await res.data[0];
-      var keys = Object.keys(data)
-      return keys
-    }
+
     //create a csv writer with inputs of header
     //headerrow is an array of values to write to the csv file if you choose to restart the file
     //therefore, the csv writer will always be append and it can be written to multiple times during scraping without erasing

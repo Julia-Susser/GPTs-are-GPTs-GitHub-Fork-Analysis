@@ -102,7 +102,11 @@ class GithubForksOverTime extends MaxPages{
     console.log(this.maxPages) 
     while (page_start <= this.maxPages){
         var page_end = Math.min(this.maxPages-page_start+1,page_end)
-        var resArray = await this.fetchQuery(page_start, page_end) //fetch pages from page_start to page_end
+        try{
+          var resArray = await this.fetchQuery(page_start, page_end) //fetch pages from page_start to page_end
+        }catch(error){
+          return;
+        }
         this.parseResponse(resArray) //write results to csv file
         var page_start = page_start+page_end //find new page start
         if (count % 3==0){ //after every three batches of 10 pages have mandatory wait
@@ -137,7 +141,19 @@ class GithubForksOverTime extends MaxPages{
       return resArray
   }
 
+  //getHeader returns the header values for the csv file that counts forks
+  //to get values the function uses a dummy request to the api to see what data the api returns when retrieving forks over time
+  async getHeader(){
+    const res = await this.performRequest()
+    if (res.data.length==0){return []}
+    const data = await res.data[0];
+    var keys = Object.keys(data)
+    return keys
+  }
+
   //performRequest requests the given page of forks data
+  //stops at page 299 ie. breaks down when reach page 300, so can't access forks past 29,900
+  //page 1 shows most recent results
   async performRequest(page=1){
     try{
       const params = this.searchParams
@@ -145,8 +161,9 @@ class GithubForksOverTime extends MaxPages{
       const res = await this.octokit.request('GET /repos/{owner}/{repo}/forks', params)
       return res
     }catch(error){
-      if (error.message == "Not Found"){ return false; }
       console.log(error.message)
+      if (error.message == "Not Found"){ return false; }
+      if (error.message == "Unexpected end of JSON input"){ throw error }
       console.log("waiting")
       await new Promise(resolve => setTimeout(resolve, 50000));
       const res = this.performRequest(page)

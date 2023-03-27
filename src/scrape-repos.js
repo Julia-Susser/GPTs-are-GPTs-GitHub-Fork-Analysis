@@ -9,10 +9,12 @@ require("dotenv").config();
 
 
 class GitHubScraper extends MaxPages{
-  constructor() {
+  constructor(query) {
     super()
     this.octokit = new Octokit({ auth: process.env.GITHUB_TOKEN }); // Replace YOUR-TOKEN with your GitHub personal access token
-    this.searchQuery = "ai"; // Replace with your search query
+    this.queryForksMinimum = "forks:>=1000"
+    this.searchQuery = query + " " + this.queryForksMinimum; // Replace with your search query
+    console.log(this.searchQuery)
     this.csvFilePath = "../inputs/repos.csv"
     this.searchParams = {
       q: this.searchQuery,
@@ -26,6 +28,7 @@ class GitHubScraper extends MaxPages{
     this.header = await this.getHeader() //get header values for csv file
     this.csvWriter = await this.makeCSVWriter(this.header,true) //use header values to create CSV writer but don't overwrite current repos file
     this.maxPages = await this.getMaxPages() //get max pages to scrape based on search request (github api for search requests maxes at 10)
+    console.log("MAX PAGES", this.maxPages)
     this.resArray = await this.fetchQuery() //get array of github query data from all pages (1-maxPages)
     this.parseResponse() //write array of query data to csv file
     console.log("finished")
@@ -39,7 +42,7 @@ class GitHubScraper extends MaxPages{
   }
 
   async write(res) {
-      const records = await res.data;
+      const records = await res.data.items;
       await this.csvWriter.writeRecords(records);
   }
   
@@ -52,6 +55,16 @@ class GitHubScraper extends MaxPages{
           })
         );
       return resArray
+  }
+
+  //getHeader returns the header values for the csv file that counts forks
+  //to get values the function uses a dummy request to the api to see what data the api returns when retrieving forks over time
+  async getHeader(){
+    const res = await this.performRequest()
+    if (res.data.items.length==0){return []}
+    const data = await res.data.items[0];
+    var keys = Object.keys(data)
+    return keys
   }
   
   //performRequest requests the given page of repos data

@@ -42,7 +42,6 @@ class Run{
         var count = 0
         while (count < lines.length){
             var query = lines[count]["queries"]
-            console.log(query)
             var queryScrape = new GitHubScraper(query)
             await queryScrape.runScraper()
             this.deleteFirstLine(this.queriesFilename)
@@ -63,8 +62,14 @@ class Run{
         var count = 0
         while (count < lines.length){
             var repo = lines[count]["full_name"]
-            count += 1
             console.log(repo)
+            var forks_count = parseInt(lines[count]["forks_count"])
+            console.log(forks_count)
+            count += 1
+            if (forks_count<1000){
+                this.deleteFirstLine(this.reposFilename)
+                continue;
+            }
             if (this.exists(repo)){ 
                 console.log("already scraped")
                 this.deleteFirstLine(this.reposFilename)

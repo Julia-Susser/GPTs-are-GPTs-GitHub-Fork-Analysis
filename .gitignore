@@ -3,3 +3,4 @@ src/.env
 inputs
 *.csv
 outputs
+!inputs/queries.csv

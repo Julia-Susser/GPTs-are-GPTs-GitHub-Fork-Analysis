@@ -104,6 +104,16 @@ class GithubForksUpdate extends MaxPages{
           );
         return resArray
     }
+    
+    //getHeader returns the header values for the csv file that counts forks
+    //to get values the function uses a dummy request to the api to see what data the api returns when retrieving forks over time
+    async getHeader(){
+      const res = await this.performRequest()
+      if (res.data.length==0){return []}
+      const data = await res.data[0];
+      var keys = Object.keys(data)
+      return keys
+    }
 
     async performRequest(page=1){
       try{
