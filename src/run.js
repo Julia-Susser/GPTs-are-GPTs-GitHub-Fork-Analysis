@@ -3,14 +3,16 @@ const csv = require('csv-parser');
 const { GitHubScraper } = require("./scrape-repos");
 const { GithubForksOverTime } = require('./count_forks');
 const { GithubForksUpdate } = require('./update-forks.js');
+const fast_csv = require('fast-csv');
 
 class Run{
     constructor() {
         this.queriesFilename = "../inputs/queries.csv";
         this.reposFilename = "../inputs/repos.csv";
         this.forkDataFolder = "../outputs"
+        this.removeDuplicates()
         //this.readQueries()
-        this.readForks()
+        //this.readForks()
         //this.updateForks()
     }
     async readCSVFile(filename) {
@@ -51,8 +53,43 @@ class Run{
             }
         }
     }
+
+    removeDuplicates(){
+      
+        const inputFile = this.reposFilename
+        const outputFile = '../outputs/repos-no-duplicates.csv';
+
+        const rows = [];
+        const seen = new Set();
+
+        // Read input CSV file and remove duplicates
+        fs.createReadStream(inputFile)
+        .pipe(fast_csv.parse({ headers: true }))
+        .on('error', error => console.error(error))
+        .on('data', row => {
+            if (!seen.has(row.full_name)) {
+            rows.push(row);
+            seen.add(row.full_name);
+            }
+        })
+        .on('end', rowCount => {
+            console.log(`Parsed ${rowCount} rows`);
+            // Write output CSV file
+            const writeStream = fs.createWriteStream(outputFile);
+            console.log("HERE")
+            fast_csv.write(rows, { headers: true }).pipe(writeStream)
+            writeStream.on('close', () => {
+                fs.unlinkSync('../inputs/repos.csv');
+                fs.renameSync(outputFile, '../inputs/repos.csv'); 
+                // perform other operations here
+            });
+            console.log(`Output file saved to ${outputFile}`);
+        });
+        
+    }
+
     exists(repo){
-        return fs.existsSync(this.forkDataFolder+repo.split("/").join("-"))
+        return fs.existsSync(this.forkDataFolder+repo.split("/").join("*"))
     }
 
     //readForks reads files of possible repos and then scrapes each individual repo for forks
@@ -70,11 +107,11 @@ class Run{
                 this.deleteFirstLine(this.reposFilename)
                 continue;
             }
-            if (this.exists(repo)){ 
-                console.log("already scraped")
-                this.deleteFirstLine(this.reposFilename)
-                continue;
-            }
+            // if (this.exists(repo)){ 
+            //     console.log("already scraped")
+            //     this.deleteFirstLine(this.reposFilename)
+            //     continue;
+            // }
             var repoScrape = new GithubForksOverTime(repo)
             await repoScrape.runScraper()
             this.deleteFirstLine(this.reposFilename)
@@ -84,6 +121,8 @@ class Run{
             }
         }
     }
+
+
 
     //reads all directors and then updates the forks in the directory
     async updateForks(){

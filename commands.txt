@@ -1,0 +1,2 @@
+scp -r -i penn-research.pem ec2-user@ec2-44-203-119-124.compute-1.amazonaws.com:./research-github-scraping/outputs ~/Downloads
+ssh -i "penn-research.pem" ec2-user@ec2-44-203-119-124.compute-1.amazonaws.com      

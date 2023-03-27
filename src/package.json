@@ -2,9 +2,13 @@
   "dependencies": {
     "@octokit/core": "^4.2.0",
     "@octokit/rest": "^19.0.7",
+    "csv": "^6.2.8",
+    "csv-parse": "^5.3.6",
     "csv-parser": "^3.0.0",
+    "csv-stringify": "^6.3.0",
     "csv-writer": "^1.6.0",
-    "dotenv": "^16.0.3"
+    "dotenv": "^16.0.3",
+    "fast-csv": "^4.3.6"
   },
   "name": "src",
   "version": "1.0.0",
