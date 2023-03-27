@@ -1,6 +1,6 @@
 
 src/.env
+!inputs/queries.csv
 inputs
 *.csv
 outputs
-!inputs/queries.csv
