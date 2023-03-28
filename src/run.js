@@ -10,7 +10,7 @@ class Run{
         this.queriesFilename = "../inputs/queries.csv";
         this.reposFilename = "../inputs/repos.csv";
         this.forkDataFolder = "../outputs"
-        //this.readQueries()
+        this.readQueries()
         //this.readForks()
         //this.updateForks()
     }
