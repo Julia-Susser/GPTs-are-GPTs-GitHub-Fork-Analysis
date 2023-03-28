@@ -10,7 +10,6 @@ class Run{
         this.queriesFilename = "../inputs/queries.csv";
         this.reposFilename = "../inputs/repos.csv";
         this.forkDataFolder = "../outputs"
-        this.removeDuplicates()
         //this.readQueries()
         //this.readForks()
         //this.updateForks()
@@ -52,6 +51,7 @@ class Run{
                 await new Promise(resolve => setTimeout(resolve, 10000));
             }
         }
+        this.removeDuplicates()
     }
 
     removeDuplicates(){
@@ -73,17 +73,15 @@ class Run{
             }
         })
         .on('end', rowCount => {
-            console.log(`Parsed ${rowCount} rows`);
+            console.log(`Parsed ${rowCount} rows into ${rows.length}`);
             // Write output CSV file
             const writeStream = fs.createWriteStream(outputFile);
-            console.log("HERE")
             fast_csv.write(rows, { headers: true }).pipe(writeStream)
             writeStream.on('close', () => {
                 fs.unlinkSync('../inputs/repos.csv');
                 fs.renameSync(outputFile, '../inputs/repos.csv'); 
                 // perform other operations here
             });
-            console.log(`Output file saved to ${outputFile}`);
         });
         
     }

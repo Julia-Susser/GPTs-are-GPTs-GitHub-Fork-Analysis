@@ -69,13 +69,20 @@ class GitHubScraper extends MaxPages{
   
   //performRequest requests the given page of repos data
   async performRequest(page=1){
+    try{
       const params = this.searchParams
       params.page = page
       var res = this.octokit.request("GET /search/repositories", 
           params
           );
-
-      return res
+    }catch(error){
+      console.log(error.message)
+      console.log("waiting")
+      await new Promise(resolve => setTimeout(resolve, 50000));
+      const res = this.performRequest(page)
+      return res;
+    }
+    return res
   }
 
 }
