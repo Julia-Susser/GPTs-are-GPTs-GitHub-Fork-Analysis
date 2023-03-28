@@ -72,9 +72,10 @@ class GitHubScraper extends MaxPages{
     try{
       const params = this.searchParams
       params.page = page
-      var res = this.octokit.request("GET /search/repositories", 
+      var res = await this.octokit.request("GET /search/repositories", 
           params
-          );
+      );
+      return res
     }catch(error){
       console.log(error.message)
       console.log("waiting")
@@ -82,7 +83,6 @@ class GitHubScraper extends MaxPages{
       const res = this.performRequest(page)
       return res;
     }
-    return res
   }
 
 }

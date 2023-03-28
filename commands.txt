@@ -3,3 +3,6 @@ ssh -i "penn-research.pem" ec2-user@ec2-44-203-119-124.compute-1.amazonaws.com
 
 
 scp -r -i penn-research.pem ec2-user@ec2-44-203-119-124.compute-1.amazonaws.com:./research-github-scraping/inputs/repos.csv ~/Downloads
+find research-github-scraping/outputs -type d | wc -l
+
+du -sh research-github-scraping/outputs

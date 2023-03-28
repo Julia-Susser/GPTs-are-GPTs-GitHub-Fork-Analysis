@@ -8,6 +8,8 @@ src/.env
 # Ignore the outputs directory
 outputs/
 
+*.pem
+
 # Include the inputs directory
 #inputs/
 

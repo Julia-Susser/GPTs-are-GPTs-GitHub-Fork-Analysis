@@ -11,6 +11,7 @@ class Run{
         this.reposFilename = "../inputs/repos.csv";
         this.forkDataFolder = "../outputs"
         this.readQueries()
+        //this.removeDuplicates()
         //this.readForks()
         //this.updateForks()
     }
@@ -58,7 +59,10 @@ class Run{
       
         const inputFile = this.reposFilename
         const outputFile = '../outputs/repos-no-duplicates.csv';
-
+        
+        // let fileContents = fs.readFileSync(inputFile, 'utf-8');
+        // fileContents = fileContents.replace(/,,/g, ",");
+        // fs.writeFileSync(inputFile, fileContents, 'utf-8');
         const rows = [];
         const seen = new Set();
 
