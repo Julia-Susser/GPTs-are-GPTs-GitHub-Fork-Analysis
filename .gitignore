@@ -3,7 +3,7 @@
 src/.env
 
 # Ignore all CSV files in the root directory
-*.csv
+#*.csv
 
 # Ignore the outputs directory
 outputs/
@@ -12,4 +12,4 @@ outputs/
 #inputs/
 
 # Include the possible-queries.csv file in the inputs directory
-!inputs/possible-queries.csv
+#!inputs/possible-queries.csv
