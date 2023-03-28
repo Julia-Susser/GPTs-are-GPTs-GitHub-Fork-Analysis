@@ -9,7 +9,7 @@ src/.env
 outputs/
 
 # Include the inputs directory
-inputs/
+#inputs/
 
 # Include the possible-queries.csv file in the inputs directory
 !inputs/possible-queries.csv
