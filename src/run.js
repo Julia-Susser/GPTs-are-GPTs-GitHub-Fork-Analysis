@@ -52,46 +52,66 @@ class Run{
                 await new Promise(resolve => setTimeout(resolve, 10000));
             }
         }
-        this.removeDuplicates()
+        await this.removeDuplicates()
+        await this.removeScrapedRepos()
+    }
+    async removeScrapedRepos(){ 
+        const inputFile = this.reposFilename
+        const outputFile = '../outputs/repos-already-scraped.csv';
+        const rows = [];
+        var rowCount = 0
+        const stream = fs.createReadStream(inputFile)
+            .pipe(fast_csv.parse({ headers: true }))
+            .on('error', error => console.error(error))
+            .on('data', row => {
+            if (!this.exists(row.full_name)) {
+                rows.push(row);
+                
+            }
+            rowCount +=1
+            });
+        await new Promise(resolve => stream.on('end', resolve));
+        const writeStream = fs.createWriteStream(outputFile);
+        fast_csv.write(rows, { headers: true }).pipe(writeStream);
+        await new Promise(resolve => writeStream.on('close', resolve));
+        fs.unlinkSync('../inputs/repos.csv');
+        fs.renameSync(outputFile, '../inputs/repos.csv'); 
+        const file = fs.createWriteStream(inputFile, {flags: 'a'});
+        file.write('\n');
+        file.end();
+        console.log(`Parsed ${rowCount} rows into ${rows.length}`);
     }
 
-    removeDuplicates(){
-      
+    async removeDuplicates(){
         const inputFile = this.reposFilename
         const outputFile = '../outputs/repos-no-duplicates.csv';
-        
-        // let fileContents = fs.readFileSync(inputFile, 'utf-8');
-        // fileContents = fileContents.replace(/,,/g, ",");
-        // fs.writeFileSync(inputFile, fileContents, 'utf-8');
-        const rows = [];
         const seen = new Set();
-
-        // Read input CSV file and remove duplicates
-        fs.createReadStream(inputFile)
-        .pipe(fast_csv.parse({ headers: true }))
-        .on('error', error => console.error(error))
-        .on('data', row => {
+        const rows = [];
+        var rowCount = 0
+        const stream = fs.createReadStream(inputFile)
+            .pipe(fast_csv.parse({ headers: true }))
+            .on('error', error => console.error(error))
+            .on('data', row => {
             if (!seen.has(row.full_name)) {
-            rows.push(row);
-            seen.add(row.full_name);
+                rows.push(row);
+                seen.add(row.full_name);
             }
-        })
-        .on('end', rowCount => {
-            console.log(`Parsed ${rowCount} rows into ${rows.length}`);
-            // Write output CSV file
-            const writeStream = fs.createWriteStream(outputFile);
-            fast_csv.write(rows, { headers: true }).pipe(writeStream)
-            writeStream.on('close', () => {
-                fs.unlinkSync('../inputs/repos.csv');
-                fs.renameSync(outputFile, '../inputs/repos.csv'); 
-                // perform other operations here
+            rowCount +=1
             });
-        });
-        
+        await new Promise(resolve => stream.on('end', resolve));
+        const writeStream = fs.createWriteStream(outputFile);
+        fast_csv.write(rows, { headers: true }).pipe(writeStream);
+        await new Promise(resolve => writeStream.on('close', resolve));
+        fs.unlinkSync('../inputs/repos.csv');
+        fs.renameSync(outputFile, '../inputs/repos.csv'); 
+        const file = fs.createWriteStream(inputFile, {flags: 'a'});
+        file.write('\n');
+        file.end();
+        console.log(`Parsed ${rowCount} rows into ${rows.length}`);
     }
 
     exists(repo){
-        return fs.existsSync(this.forkDataFolder+repo.split("/").join("*"))
+        return fs.existsSync(this.forkDataFolder+"/"+repo.split("/").join("*"))
     }
 
     //readForks reads files of possible repos and then scrapes each individual repo for forks

@@ -22,17 +22,8 @@ class CSVHelper {
     //therefore, the csv writer will always be append and it can be written to multiple times during scraping without erasing
     async getCSVWriter(header, headerrow, append=false){
         const fileExists = await fs.existsSync(this.csvFilePath);
-        var lines = await this.readCSVFile(this.csvFilePath)
-        if (lines.length==0){
-          append = false
-        }
         if (!append | !fileExists){
           await fs.writeFileSync(this.csvFilePath, headerrow.join(",")+"\n")
-        }
-        if (append){
-          const file = fs.createWriteStream(this.csvFilePath, {flags: 'a'});
-          file.write('\n');
-          file.end();
         }
         var params = {
           path: this.csvFilePath,

@@ -1,4 +1,4 @@
-scp -r -i penn-research.pem ec2-user@ec2-44-203-119-124.compute-1.amazonaws.com:./research-github-scraping/outputs ~/Downloads
+scp -r -i penn-research.pem ec2-user@ec2-44-202-18-109.compute-1.amazonaws.com:./research-github-scraping/inputs ~/Downloads
 ssh -i "penn-research.pem" ec2-user@ec2-44-203-119-124.compute-1.amazonaws.com      
 
 
@@ -6,3 +6,7 @@ scp -r -i penn-research.pem ec2-user@ec2-44-203-119-124.compute-1.amazonaws.com:
 find research-github-scraping/outputs -type d | wc -l
 
 du -sh research-github-scraping/outputs
+
+
+tar -czf outputs.tar.gz research-github-scraping/outputs
+scp -r -i penn-research.pem ec2-user@ec2-44-202-18-109.compute-1.amazonaws.com:./outputs.tar.gz ~/Downloads
