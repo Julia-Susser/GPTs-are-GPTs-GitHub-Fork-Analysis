@@ -7,12 +7,13 @@ const fast_csv = require('fast-csv');
 
 class Run{
     constructor() {
+        var data = "control-data"
         this.queriesFilename = "../inputs/queries.csv";
         this.reposFilename = "../inputs/repos.csv";
-        this.forkDataFolder = "../outputs"
-        this.readQueries()
+        this.forkDataFolder = "../outputs/"+data+"/"
+        //this.readQueries()
         //this.removeDuplicates()
-        //this.readForks()
+        this.readForks()
         //this.updateForks()
     }
     async readCSVFile(filename) {
@@ -111,7 +112,11 @@ class Run{
     }
 
     exists(repo){
-        return fs.existsSync(this.forkDataFolder+"/"+repo.split("/").join("*"))
+        //var repos = fs.readdirSync("outputs", { withFileTypes: true });
+        //repos = repos.filter((file) => file.isDirectory()).map((file) => file.name);
+        var repoFolder = this.forkDataFolder+"/"+repo.split("/").join("*")
+        var forksExists = fs.existsSync(repoFolder+"/forks.csv")
+        return forksExists
     }
 
     //readForks reads files of possible repos and then scrapes each individual repo for forks
@@ -134,7 +139,7 @@ class Run{
             //     this.deleteFirstLine(this.reposFilename)
             //     continue;
             // }
-            var repoScrape = new GithubForksOverTime(repo)
+            var repoScrape = new GithubForksOverTime(repo, this.forkDataFolder)
             await repoScrape.runScraper()
             this.deleteFirstLine(this.reposFilename)
             if (count % 3==0){
@@ -155,12 +160,15 @@ class Run{
             var repo = repos[count]
             repo = repo.split("*").join("/")
             console.log(repo)
-            var repoScrape = new GithubForksUpdate(repo)
-            await repoScrape.runScraper()
             count += 1
-            if (count % 1==0){
+            if (!(this.exists(repo))){
+                continue
+            }
+            var repoScrape = new GithubForksUpdate(repo, this.forkDataFolder)
+            await repoScrape.runScraper()
+            if (count % 2==0){
                 console.log("waiting")
-                await new Promise(resolve => setTimeout(resolve, 25000));
+                await new Promise(resolve => setTimeout(resolve, 1000));
             }
         }
     }

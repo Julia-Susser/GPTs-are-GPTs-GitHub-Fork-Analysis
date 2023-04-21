@@ -5,16 +5,16 @@ const fs = require('fs');
 const csv = require('csv-parser');
 const { MaxPages } = require('./max-pages');
 require("dotenv").config();
-
+const fast_csv = require('fast-csv');
 
 class GithubForksUpdate extends MaxPages{
-  constructor(repoName) {
+  constructor(repoName, folder="../outputs/") {
     super()
     this.repoName = repoName;
     [this.owner, this.repo] = this.repoName.split('/');
     this.repoName = this.owner+"*"+this.repo
     this.octokit = new Octokit({ auth: process.env.GITHUB_TOKEN }); // Replace YOUR-TOKEN with your GitHub personal access token
-    this.folder = "../outputs/"+this.repoName
+    this.folder = folder+this.repoName
     this.csvFilePath = this.folder+"/forks.csv"
     this.searchParams = {
         owner: this.owner,
@@ -26,12 +26,14 @@ class GithubForksUpdate extends MaxPages{
           }
       }
     // this.runScraper()
+
   }
 
   async runScraper() {
     this.header = await this.getHeader() //get header values for csv file
     this.csvWriter = await this.makeCSVWriter(this.header, true) //use header values to create CSV writer but don't overwrite current repos file
     this.since = await this.getLatestFork() //get the latest fork queried because only need to add forks past this date
+    console.log("Latest fork "+this.since)
     this.maxPages = await this.getMaxPages() //get maxPages of forks (only forks past date)
     console.log(this.maxPages)
     await this.performQueries() //get queries and write to csv (bottom of csv file so dates get mixed up)
@@ -61,10 +63,12 @@ class GithubForksUpdate extends MaxPages{
     var page_start = 1 //where to start batch of page requests
     var page_end = 10 
     var count = 1
+    var resArrays = [] //write all new forks to csv at the end because it will start with newest
     while (page_start <= this.maxPages){
         var page_end = Math.min(this.maxPages-page_start+1,page_end)
         this.resArray = await this.fetchQuery(page_start, page_end)
-        var finished = this.parseResponse() //writes forks before latest date to csv and checks whether fork queried is older than latest date to determine whether to keep querying
+        resArrays.push(this.resArray)
+        var finished = this.parseResponse(this.resArray)
         if (finished){ break; } //if fork is older than latest date, then stop
         var page_start = page_start+page_end //find new page start
         if (count % 3==0){
@@ -74,10 +78,38 @@ class GithubForksUpdate extends MaxPages{
         }
         count += 1
     }
+
+    resArrays.map(resArray => {
+      resArray.map(res => this.write(res))
+    })
+    this.reorderForks()
+    
+  }
+
+  async reorderForks(){ 
+    const inputFile = this.csvFilePath
+    var rows = [];
+    var rowCount = 0
+    const stream = fs.createReadStream(inputFile)
+        .pipe(fast_csv.parse({ headers: true }))
+        .on('error', error => console.error(error))
+        .on('data', row => {
+          rows.push(row);
+      });
+    await new Promise(resolve => stream.on('end', resolve));
+    rows = rows.sort(function (a, b) {
+          return new Date(b.created_at) - new Date(a.created_at);
+        });
+    const writeStream = fs.createWriteStream(inputFile);
+    fast_csv.write(rows, { headers: true }).pipe(writeStream);
+    await new Promise(resolve => writeStream.on('close', resolve));
+    const file = fs.createWriteStream(inputFile, {flags: 'a'});
+    file.write('\n');
+    file.end();
   }
 
     async parseResponse(){
-        this.resArray.map(res => this.write(res))
+        // this.resArray.map(res => this.write(res))
         var stop = this.resArray[this.resArray.length-1].data[0].created_at
         stop = stop <= this.since
         return stop

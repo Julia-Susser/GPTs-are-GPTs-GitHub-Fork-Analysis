@@ -7,13 +7,13 @@ require("dotenv").config();
 
 
 class GithubForksOverTime extends MaxPages{
-  constructor(repoName) {
+  constructor(repoName, folder="../outputs/") {
     super()
     this.repoName = repoName;
     [this.owner, this.repo] = this.repoName.split('/');
     this.repoName = this.owner+"*"+this.repo
     this.octokit = new Octokit({ auth: process.env.GITHUB_TOKEN }); // Replace YOUR-TOKEN with your GitHub personal access token
-    this.folder = "../outputs/"+this.repoName
+    this.folder = folder+this.repoName
     this.csvFilePath = this.folder+"/forks.csv"
     this.searchParams = {
         owner: this.owner,
