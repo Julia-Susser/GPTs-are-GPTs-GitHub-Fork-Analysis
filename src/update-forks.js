@@ -61,16 +61,16 @@ class GithubForksUpdate extends MaxPages{
   //indeed, the scraping of pages 1-10, 11-20... are asynchronous and in between, there is a timeout to prevent hitting max request rate
   async performQueries() {
     var page_start = 1 //where to start batch of page requests
-    var page_end = 10 
+    var numPages = 5 
     var count = 1
     var resArrays = [] //write all new forks to csv at the end because it will start with newest
     while (page_start <= this.maxPages){
-        var page_end = Math.min(this.maxPages-page_start+1,page_end)
-        this.resArray = await this.fetchQuery(page_start, page_end)
+        var numPages = Math.min(this.maxPages-page_start+1,numPages)
+        this.resArray = await this.fetchQuery(page_start, numPages)
         resArrays.push(this.resArray)
         var finished = this.parseResponse(this.resArray)
         if (finished){ break; } //if fork is older than latest date, then stop
-        var page_start = page_start+page_end //find new page start
+        var page_start = page_start+numPages //find new page start
         if (count % 3==0){
           console.log("waiting")
           await new Promise(resolve => setTimeout(resolve, 50000));
@@ -126,8 +126,8 @@ class GithubForksUpdate extends MaxPages{
     }
 
 
-    async fetchQuery(page_start, page_end){
-      const requestPages = Array.from({length: page_end}, (_, i) => i + page_start)
+    async fetchQuery(page_start, numPages){
+      const requestPages = Array.from({length: numPages}, (_, i) => i + page_start)
         console.log(requestPages)
         const resArray = await Promise.all(
             requestPages.map((page) => {

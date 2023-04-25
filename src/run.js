@@ -7,14 +7,14 @@ const fast_csv = require('fast-csv');
 
 class Run{
     constructor() {
-        var data = "control-data"
+        var data = "llm"
         this.queriesFilename = "../inputs/queries.csv";
         this.reposFilename = "../inputs/repos.csv";
         this.forkDataFolder = "../outputs/"+data+"/"
         //this.readQueries()
         //this.removeDuplicates()
-        this.readForks()
-        //this.updateForks()
+        //this.readForks()
+        this.updateForks()
     }
     async readCSVFile(filename) {
         return new Promise((resolve, reject) => {
@@ -150,14 +150,21 @@ class Run{
     }
 
 
-
-    //reads all directors and then updates the forks in the directory
-    async updateForks(){
+    async newListOfReposToUpdate(){
         var repos = fs.readdirSync(this.forkDataFolder, { withFileTypes: true });
         repos = repos.filter((file) => file.isDirectory()).map((file) => file.name);
+        const filePath = '../inputs/update-repos.csv'; 
+        const csvString = "repo\n"+repos.map(repo => `"${repo}"`).join('\n');
+        fs.writeFileSync(filePath, csvString)
+    }
+    //reads all directors and then updates the forks in the directory
+    async updateForks(){
+        var filename = "../inputs/update-repos.csv"
+        // await this.newListOfReposToUpdate()
+        var repos = await this.readCSVFile(filename)
         var count = 0
         while (count < repos.length){
-            var repo = repos[count]
+            var repo = repos[count]["repo"]
             repo = repo.split("*").join("/")
             console.log(repo)
             count += 1
@@ -170,6 +177,7 @@ class Run{
                 console.log("waiting")
                 await new Promise(resolve => setTimeout(resolve, 1000));
             }
+            this.deleteFirstLine(filename)
         }
     }
 }

@@ -97,18 +97,18 @@ class GithubForksOverTime extends MaxPages{
   //indeed, the scraping of pages 1-10, 11-20... are asynchronous and in between, there is a timeout to prevent hitting max request rate
   async performQueries() {
     var page_start = 1 //where to start batch of page requests
-    var page_end = 10 
+    var numPages = 10 
     var count = 1
     console.log(this.maxPages) 
     while (page_start <= this.maxPages){
-        var page_end = Math.min(this.maxPages-page_start+1,page_end)
+        var numPages = Math.min(this.maxPages-page_start+1,numPages)
         try{
-          var resArray = await this.fetchQuery(page_start, page_end) //fetch pages from page_start to page_end
+          var resArray = await this.fetchQuery(page_start, numPages) //fetch pages from page_start to page_end
         }catch(error){
           return;
         }
         this.parseResponse(resArray) //write results to csv file
-        var page_start = page_start+page_end //find new page start
+        var page_start = page_start+numPages //find new page start
         if (count % 3==0){ //after every three batches of 10 pages have mandatory wait
           console.log("waiting")
           await new Promise(resolve => setTimeout(resolve, 50000));
@@ -128,10 +128,10 @@ class GithubForksOverTime extends MaxPages{
       await this.csvWriter.writeRecords(records);
   }
 
-  //fetchQuery requests pages between page_start and page_end
+  //fetchQuery requests pages between page_start and numPages
   //returns an array of the data from each request
-  async fetchQuery(page_start, page_end){
-      const requestPages = Array.from({length: page_end}, (_, i) => i + page_start)
+  async fetchQuery(page_start, numPages){
+      const requestPages = Array.from({length: numPages}, (_, i) => i + page_start)
       console.log(requestPages)
       const resArray = await Promise.all(
           requestPages.map((page) => {
@@ -161,6 +161,7 @@ class GithubForksOverTime extends MaxPages{
       const res = await this.octokit.request('GET /repos/{owner}/{repo}/forks', params)
       return res
     }catch(error){
+      console.log(error)
       console.log(error.message)
       if (error.message == "Not Found"){ return false; }
       if (error.message == "Unexpected end of JSON input"){ throw error }
