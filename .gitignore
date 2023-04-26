@@ -10,7 +10,7 @@ outputs/
 data/
 data.zip
 *.pem
-
+*.zip
 # Include the inputs directory
 #inputs/
 
