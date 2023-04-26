@@ -161,7 +161,6 @@ class GithubForksOverTime extends MaxPages{
       const res = await this.octokit.request('GET /repos/{owner}/{repo}/forks', params)
       return res
     }catch(error){
-      console.log(error)
       console.log(error.message)
       if (error.message == "Not Found"){ return false; }
       if (error.message == "Unexpected end of JSON input"){ throw error }

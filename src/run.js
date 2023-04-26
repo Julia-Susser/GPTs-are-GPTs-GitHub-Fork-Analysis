@@ -160,24 +160,24 @@ class Run{
     //reads all directors and then updates the forks in the directory
     async updateForks(){
         var filename = "../inputs/update-repos.csv"
-        // await this.newListOfReposToUpdate()
+        await this.newListOfReposToUpdate()
         var repos = await this.readCSVFile(filename)
         var count = 0
         while (count < repos.length){
             var repo = repos[count]["repo"]
             repo = repo.split("*").join("/")
             console.log(repo)
-            count += 1
             if (!(this.exists(repo))){
                 continue
             }
             var repoScrape = new GithubForksUpdate(repo, this.forkDataFolder)
             await repoScrape.runScraper()
+            this.deleteFirstLine(filename)
+            count += 1
             if (count % 2==0){
                 console.log("waiting")
                 await new Promise(resolve => setTimeout(resolve, 1000));
             }
-            this.deleteFirstLine(filename)
         }
     }
 }
